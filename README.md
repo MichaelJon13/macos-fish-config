@@ -394,7 +394,7 @@ Fish Shell versions: 4.0 - 4.7+
 
 ## 📄 License
 
-This configuration is provided as-is. See LICENSE file for details.
+Licensed under the [MIT License](LICENSE.md). See LICENSE.md for full terms.
 
 ---
 
