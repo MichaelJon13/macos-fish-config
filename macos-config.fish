@@ -95,10 +95,10 @@ end
 
 # Replace ls with eza (if installed)
 if type -q eza
-    alias ls='eza -al --color=always --group-directories-first --icons=always'
-    alias la='eza -a --color=always --group-directories-first --icons=always'
-    alias ll='eza -l --color=always --group-directories-first --icons=always'
-    alias lt='eza -aT --color=always --group-directories-first --icons=always'
+    alias ls='eza -al --color=always --group-directories-first --icons=auto'
+    alias la='eza -a --color=always --group-directories-first --icons=auto'
+    alias ll='eza -l --color=always --group-directories-first --icons=auto'
+    alias lt='eza -aT --color=always --group-directories-first --icons=auto'
     alias l.="eza -a | grep -e '^\.'"
 else
     alias ls='ls -Al'
