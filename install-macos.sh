@@ -15,6 +15,7 @@ readonly YELLOW='\033[1;33m'
 readonly BLUE='\033[0;34m'
 readonly CYAN='\033[0;36m'
 readonly BOLD='\033[1m'
+readonly MAGENTA='\033[0;35m'
 readonly NC='\033[0m' # No Color
 
 # Configuration paths
@@ -22,6 +23,9 @@ readonly FISH_CONFIG_DIR="${HOME}/.config/fish"
 readonly REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 readonly BACKUP_DIR="${FISH_CONFIG_DIR}/backups"
 readonly TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+
+# Dry-run mode flag
+DRY_RUN=false
 
 ################################################################################
 # UI Functions
@@ -55,6 +59,21 @@ print_info() {
 
 print_divider() {
     echo -e "${CYAN}─────────────────────────────────────────────────────${NC}"
+}
+
+print_dryrun() {
+    echo -e "${MAGENTA}[DRY RUN]${NC} $1"
+}
+
+# Execute with dry-run support
+execute_cmd() {
+    local description=$1
+    shift
+    if [ "$DRY_RUN" = true ]; then
+        print_dryrun "Would execute: $@"
+    else
+        "$@"
+    fi
 }
 
 # Simple menu selection
@@ -154,12 +173,18 @@ install_dependency() {
     
     print_info "Installing $description..."
     
-    if brew install "$dep"; then
-        print_success "$description installed successfully"
+    if [ "$DRY_RUN" = true ]; then
+        print_dryrun "Would run: brew install $dep"
+        print_success "$description (dry-run, would install successfully)"
         return 0
     else
-        print_error "Failed to install $description"
-        return 1
+        if brew install "$dep"; then
+            print_success "$description installed successfully"
+            return 0
+        else
+            print_error "Failed to install $description"
+            return 1
+        fi
     fi
 }
 
@@ -225,21 +250,32 @@ check_all_dependencies() {
 create_backup() {
     print_section "Creating backup of current Fish configuration"
     
-    if [ ! -d "$BACKUP_DIR" ]; then
-        mkdir -p "$BACKUP_DIR"
-        print_success "Created backup directory: $BACKUP_DIR"
-    fi
-    
-    if [ -f "$FISH_CONFIG_DIR/config.fish" ]; then
-        local backup_file="$BACKUP_DIR/config.fish.${TIMESTAMP}.bak"
-        cp "$FISH_CONFIG_DIR/config.fish" "$backup_file"
-        print_success "Backed up config.fish to: $backup_file"
-    fi
-    
-    if [ -d "$FISH_CONFIG_DIR/conf.d" ] && [ "$(ls -A $FISH_CONFIG_DIR/conf.d)" ]; then
-        local backup_dir="$BACKUP_DIR/conf.d.${TIMESTAMP}"
-        cp -r "$FISH_CONFIG_DIR/conf.d" "$backup_dir"
-        print_success "Backed up conf.d to: $backup_dir"
+    if [ "$DRY_RUN" = true ]; then
+        print_dryrun "Would create backup directory: $BACKUP_DIR"
+        if [ -f "$FISH_CONFIG_DIR/config.fish" ]; then
+            print_dryrun "Would backup config.fish to: $BACKUP_DIR/config.fish.${TIMESTAMP}.bak"
+        fi
+        if [ -d "$FISH_CONFIG_DIR/conf.d" ] && [ "$(ls -A $FISH_CONFIG_DIR/conf.d 2>/dev/null)" ]; then
+            print_dryrun "Would backup conf.d to: $BACKUP_DIR/conf.d.${TIMESTAMP}"
+        fi
+        print_success "Backup (dry-run, would complete successfully)"
+    else
+        if [ ! -d "$BACKUP_DIR" ]; then
+            mkdir -p "$BACKUP_DIR"
+            print_success "Created backup directory: $BACKUP_DIR"
+        fi
+        
+        if [ -f "$FISH_CONFIG_DIR/config.fish" ]; then
+            local backup_file="$BACKUP_DIR/config.fish.${TIMESTAMP}.bak"
+            cp "$FISH_CONFIG_DIR/config.fish" "$backup_file"
+            print_success "Backed up config.fish to: $backup_file"
+        fi
+        
+        if [ -d "$FISH_CONFIG_DIR/conf.d" ] && [ "$(ls -A $FISH_CONFIG_DIR/conf.d 2>/dev/null)" ]; then
+            local backup_dir="$BACKUP_DIR/conf.d.${TIMESTAMP}"
+            cp -r "$FISH_CONFIG_DIR/conf.d" "$backup_dir"
+            print_success "Backed up conf.d to: $backup_dir"
+        fi
     fi
 }
 
@@ -276,21 +312,31 @@ install_config() {
         return 1
     fi
     
-    # Install main config
-    cp "$REPO_DIR/config.fish" "$FISH_CONFIG_DIR/config.fish"
-    print_success "Installed config.fish"
-    
-    # Install macOS config
-    cp "$REPO_DIR/macos-config.fish" "$FISH_CONFIG_DIR/macos-config.fish"
-    print_success "Installed macos-config.fish"
-    
-    # Install done.fish plugin if it exists
-    if [ -f "$REPO_DIR/conf.d/done.fish" ]; then
-        cp "$REPO_DIR/conf.d/done.fish" "$FISH_CONFIG_DIR/conf.d/done.fish"
-        print_success "Installed done.fish plugin"
+    if [ "$DRY_RUN" = true ]; then
+        # Dry-run mode
+        print_dryrun "Would copy $REPO_DIR/config.fish → $FISH_CONFIG_DIR/config.fish"
+        print_dryrun "Would copy $REPO_DIR/macos-config.fish → $FISH_CONFIG_DIR/macos-config.fish"
+        
+        if [ -f "$REPO_DIR/conf.d/done.fish" ]; then
+            print_dryrun "Would copy $REPO_DIR/conf.d/done.fish → $FISH_CONFIG_DIR/conf.d/done.fish"
+        fi
+        
+        print_success "Configuration files (dry-run, would install successfully)"
+    else
+        # Actual installation
+        cp "$REPO_DIR/config.fish" "$FISH_CONFIG_DIR/config.fish"
+        print_success "Installed config.fish"
+        
+        cp "$REPO_DIR/macos-config.fish" "$FISH_CONFIG_DIR/macos-config.fish"
+        print_success "Installed macos-config.fish"
+        
+        if [ -f "$REPO_DIR/conf.d/done.fish" ]; then
+            cp "$REPO_DIR/conf.d/done.fish" "$FISH_CONFIG_DIR/conf.d/done.fish"
+            print_success "Installed done.fish plugin"
+        fi
+        
+        print_success "Configuration files installed successfully"
     fi
-    
-    print_success "Configuration files installed successfully"
 }
 
 verify_installation() {
@@ -371,7 +417,12 @@ show_status() {
 
 show_main_menu() {
     while true; do
-        print_header "macOS Fish Shell Configuration Installer"
+        local dry_run_indicator=""
+        if [ "$DRY_RUN" = true ]; then
+            dry_run_indicator=" ${MAGENTA}[DRY RUN MODE]${NC}"
+        fi
+        
+        print_header "macOS Fish Shell Configuration Installer${dry_run_indicator}"
         
         echo -e "${BOLD}What would you like to do?${NC}\n"
         echo "  1) Check system status"
@@ -380,7 +431,11 @@ show_main_menu() {
         echo "  4) Install new Fish configuration"
         echo "  5) Full installation (backup + install + verify)"
         echo "  6) View installation guide"
-        echo "  7) Exit"
+        if [ "$DRY_RUN" = true ]; then
+            echo "  7) Exit dry-run mode and return to normal mode"
+        else
+            echo "  7) Exit"
+        fi
         
         read -p "Choose option (1-7): " choice
         
@@ -402,8 +457,13 @@ show_main_menu() {
                 ;;
             6) show_guide ;;
             7)
-                print_success "Exiting. Goodbye!"
-                exit 0
+                if [ "$DRY_RUN" = true ]; then
+                    DRY_RUN=false
+                    print_success "Exiting dry-run mode. Returning to normal mode."
+                else
+                    print_success "Exiting. Goodbye!"
+                    exit 0
+                fi
                 ;;
             *) print_error "Invalid selection. Please try again." ;;
         esac
@@ -507,7 +567,47 @@ EOF
 # Main Execution
 ################################################################################
 
+print_usage() {
+    cat << 'EOF'
+Usage: ./install-macos.sh [OPTIONS]
+
+OPTIONS:
+    --dry-run, -d       Run in dry-run mode (shows what would be done without making changes)
+    --help, -h          Show this help message
+
+EXAMPLES:
+    # Run interactive installer
+    ./install-macos.sh
+
+    # Preview changes without making them
+    ./install-macos.sh --dry-run
+
+    # Show help
+    ./install-macos.sh --help
+
+EOF
+}
+
 main() {
+    # Parse command-line arguments
+    while [[ $# -gt 0 ]]; do
+        case $1 in
+            --dry-run|-d)
+                DRY_RUN=true
+                shift
+                ;;
+            --help|-h)
+                print_usage
+                exit 0
+                ;;
+            *)
+                print_error "Unknown option: $1"
+                print_usage
+                exit 1
+                ;;
+        esac
+    done
+    
     # Check if running from correct directory
     if [ ! -f "$REPO_DIR/config.fish" ] || [ ! -f "$REPO_DIR/macos-config.fish" ]; then
         print_error "Script must be run from the repository root directory"
@@ -515,12 +615,24 @@ main() {
         exit 1
     fi
     
-    print_header "macOS Fish Shell Setup"
+    local header_msg="macOS Fish Shell Setup"
+    if [ "$DRY_RUN" = true ]; then
+        header_msg="$header_msg ${MAGENTA}[DRY RUN MODE]${NC}"
+    fi
+    
+    print_header "$header_msg"
     
     echo "This script will help you install and configure Fish Shell on macOS."
     echo "Homebrew must be installed before proceeding."
     echo ""
     print_info "Your current Fish configuration will be backed up before installation."
+    
+    if [ "$DRY_RUN" = true ]; then
+        echo ""
+        print_dryrun "DRY RUN MODE ENABLED"
+        echo "No changes will be made to your system. You'll see what would happen."
+    fi
+    
     echo ""
     
     # Start interactive menu
