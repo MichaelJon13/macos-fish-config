@@ -86,6 +86,21 @@ fish
 | **bat** | Syntax highlighter for man pages | Fallback to plain `man` |
 | **fastfetch** | System information display | Skipped if not installed |
 
+### Nerd Font (for eza icons)
+eza uses `--icons=auto` to show file type icons. These display correctly when your terminal font supports them. If you see `?` placeholder characters, install a Nerd Font:
+
+```bash
+# Install via Homebrew
+brew install --cask font-jetbrains-mono-nerd-font
+
+# Then set it in your terminal:
+# Terminal.app → Settings → Profiles → Font → JetBrains Mono Nerd Font
+# iTerm2 → Preferences → Profiles → Text → Font → JetBrains Mono Nerd Font
+# Warp → Preferences → Font → JetBrains Mono Nerd Font
+```
+
+Other Nerd Font options: `font-meslo-lg-nerd-font`, `font-fira-code-nerd-font`, `font-firamono-nerd-font`.
+
 ---
 
 ## ✨ Features
