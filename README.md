@@ -2,7 +2,7 @@
 
 A modern, user-friendly Fish shell configuration optimized for **macOS 10.12+** with Homebrew support.
 
-> **Note:** This is the **macOS-optimized branch**. For CachyOS/Arch Linux, see the [main branch](https://github.com/cachyos/cachyos-fish-config/tree/main).
+> **Note:** This is the **macOS-optimized branch**. From CachyOS/Arch Linux, see the [main branch](https://github.com/cachyos/cachyos-fish-config/tree/main).
 
 ---
 
