@@ -394,7 +394,7 @@ Fish Shell versions: 4.0 - 4.7+
 
 ## 📄 License
 
-Licensed under the [MIT License](LICENSE.md). See LICENSE.md for full terms.
+Licensed under the [GNU General Public License v3.0](LICENSE.md). See LICENSE.md for full terms.
 
 ---
 
